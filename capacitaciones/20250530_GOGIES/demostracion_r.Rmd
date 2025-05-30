@@ -1,0 +1,220 @@
+---
+title: "Introducción al uso de datos sensibles"
+author: ""
+date: "GOGIES - 30 de Mayo de 2025"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 2
+  theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = TRUE)
+```
+
+# Protección de datos personales en salud
+
+Este documento es una herramienta que forma parte de la Capacitación "Introducción al uso de datos sensibles" desarrollado por ARPHAI gracias al financiamiento de [Invest In Open Infrastracture](https://investinopen.org/).
+
+Aquí vas a encontar algunas herramientas simples para explorar las posibilidades de procesamiento de los datos con el objetivo de resguardar la privacidad de sus titulares. De ningún modo es un compendio exhaustivo ni las estrategias seleccionadas son necesariamente las mejores.
+
+Se presentarán alternativas en R. En la sección de créditos se incluyen además recursos con sugerencias para quienes trabajan con python y hojas de cálculo.
+
+Esperamos que te sea de utilidad!
+
+## Preparación
+
+Como primer paso vamos a cargar las bibliotecas y datos necesarios.
+
+```{r}
+library(tidyverse)
+
+# Funciones para anonimizar datos
+library(sdcMicro)
+```
+
+Cargamos los datos para trabajar en R:
+
+```{r carga de datos en R}
+# Carga de la base de muestra para el ambiente de R
+pacientes_muestra <- read_csv("data/muestra_pacientes_capacitacion.csv", 
+                              locale = locale(encoding = "WINDOWS-1252"))
+```
+
+```{r tabla_head, echo=FALSE}
+DT::datatable(head(pacientes_muestra),
+              rownames=FALSE,
+              options = list(dom = 't'))
+```
+
+## Hashing
+
+Se denomina así al proceso que transforma un dato en otra serie de caracteres de longitud fija, sin importar la longitud original de dicho dato. Existen diversos algoritmos que permiten hacer esta transformación. En el ejemplo, se toma como dato de entrada la columna 'nombre_completo' (que luego debería eliminarse), y se utiliza el algoritmo SHA-256 (Secure Hash Algorithm 2) para generar la columna 'nombre_completo_hash'.
+
+```{r hashing en R}
+### Se importa la biblioteca
+library(openssl)
+
+pacientes_muestra <- pacientes_muestra %>%
+  mutate(nombre_completo_hash = sha256(nombre_completo))
+```
+
+```{r tabla_hash, echo=FALSE}
+DT::datatable(head(pacientes_muestra) %>% select(num_historia,
+                                                 nombre_completo,
+                                                 nombre_completo_hash),
+              rownames=FALSE,
+              options = list(dom = 't'))
+```
+
+¿Siempre se obtiene el mismo valor de salida dado el mismo valor de entrada?
+
+```{r comparamos hashing}
+
+entradas <- c(pacientes_muestra$nombre_completo[4],
+              'Miguel Angel Fernandez',
+              'Miguel Angel Fernández',
+              str_to_upper('Miguel Angel Fernandez'))
+
+salidas <- c(pacientes_muestra$nombre_completo_hash[4],
+             sha256('Miguel Angel Fernandez'),
+             sha256('Miguel Angel Fernández'),
+             sha256(str_to_upper('Miguel Angel Fernandez')))
+```
+
+Como esperamos, los resultados coinciden
+
+```{r comparamos hashing II, echo=FALSE}
+
+DT::datatable(data.frame(entradas, salidas),
+              rownames=FALSE,
+              options = list(dom = 't'))
+```
+
+## Generalización
+
+Consiste en reemplazar los valores puntuales por valores agrupados, menos específicos. Por ejemplo, una persona que aparece en los registros con la edad puntual de 38 años se la reemplaza por un intervalo que va desde los 30 a los 40 años. La columna 'edad agrupada' es el resultado del proceso de generalización a partir del valor 'edad' que es eliminado del conjunto de datos. Lo que se busca es reducir la granularidad de los datos, dificultando o incluso imposibilitando la recuperación de los valores puntuales asociados con un individuo.
+
+```{r generalización en R}
+
+pacientes_muestra <- pacientes_muestra %>% 
+  mutate(edad_agrupada = cut(edad,
+                              breaks = c(0, 18, 30, 45, 60, max(pacientes_muestra$edad)),
+                              include.lowest = T,
+                              labels = c('0-18', '19-30', '31-45', '46-60', '60+')))
+
+# cuento el total de registros por categoría
+totales_edad_agrupada_r <- pacientes_muestra %>% 
+  count(edad_agrupada, name = 'Pacientes')
+```
+
+```{r comparo}
+
+totales_edad_agrupada_r
+
+pacientes_muestra %>% filter(edad==122)
+```
+
+## Supresión
+
+La supresión consiste en remover los casos atípicos que por su baja frecuencia no pueden ser unidos en una clase de equivalencia ya sea porque son únicos en su clase (por ej. sólo una persona con edad en el rango de 50-59) o porque al generalizar implicaría ampliar una categoría de forma tal que se vuelve poco informativa (se amplía la categoría 40-49 a 40-60). El registro de la persona con el dato extremo (por ej. 58 años de edad), se remueve del conjunto de datos.
+
+Para eso el primer paso es identificar los valores extremos, esto puede hacerse mediante cualquier estrategia conocida (por ej. rango intercuartílico). Por una cuestión de practicidad, vamos a reconocerlos con medidas resumen y box-plot, pero esto es muy dependiente del tipo de datos y el posterior uso que queramos hacer de ellos.
+
+```{r supresión en R}
+
+ggplot(pacientes_muestra, 
+       aes(y=edad)) +
+  geom_boxplot() +
+  xlab("") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+pacientes_muestra_sup <- pacientes_muestra %>% 
+  filter(edad <= 100)
+
+print(summary(pacientes_muestra$edad))
+print(summary(pacientes_muestra_sup$edad))
+```
+
+## Perturbación
+
+Este método para anonimizar conjuntos de datos se puede aplicar a las entradas de datos numéricos, y consiste en reemplazar el valor de los atributos con valores aleatorios o partir de un listado, alterando los conjuntos de datos con un valor y una operación específicos. Este método modifica el conjunto de datos original mediante el uso de métodos de redondeo y ruido aleatorio.
+
+```{r perturbación en R}
+# Cargamos la biblioteca sdcMicro
+library(sdcMicro)
+
+# Parametrizamos el porcentaje de perturbación deseado
+ruido = 10
+
+pacientes_muestra['edad_per'] <- addNoise(pacientes_muestra['edad'], noise = ruido)$xm
+
+pacientes_muestra <- pacientes_muestra %>% 
+  mutate(edad_per_corr = floor(abs(edad_per)))
+```
+
+```{r tabla_hash_per, echo=FALSE}
+DT::datatable(head(pacientes_muestra) %>% select(num_historia,
+                                                 nombre_completo,
+                                                 edad,
+                                                 edad_per,
+                                                 edad_per_corr),
+              rownames=FALSE,
+              options = list(dom = 't'))
+```
+
+```{r comparo dist}
+
+ggplot(pacientes_muestra, 
+       aes(y=edad)) +
+  geom_boxplot() +
+  xlab("") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+ggplot(pacientes_muestra, 
+       aes(y=edad_per_corr)) +
+  geom_boxplot() +
+  xlab("") +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+```
+
+## Créditos
+
+Hashing:
+
+<https://cran.r-project.org/web/packages/openssl/vignettes/crypto_hashing.html>
+
+### Datasets
+
+Datos abiertos - Argentina
+
+-   <https://datos.gob.ar/dataset/otros-nombres-personas-fisicas>
+
+-   [ttps://datos.gob.ar/dataset/renaper-distribucion-apellidos-argentina](https://datos.gob.ar/dataset/renaper-distribucion-apellidos-argentina){.uri}
+
+Datos abiertos - Colombia
+
+-   <https://www.datos.gov.co/Ciencia-Tecnolog-a-e-Innovaci-n/Distribuci-n-de-Diagn-sticos-por-Edades-Dermatolog/ga8i-3ndm>
+
+## Para seguir explorando
+
+-   Reconocimiento de entidades nombradas en texto libre [python] <https://github.com/instituciones-abiertas/anonimizacion-texto-libre>
+
+-   Criterios de disociación de datos personales <https://www.gub.uy/agencia-gobierno-electronico-sociedad-informacion-conocimiento/sites/agencia-gobierno-electronico-sociedad-informacion-conocimiento/files/documentos/noticias/11--criterios-de-disociacion-de-datos-personales.pdf>
+
+### En Python
+
+Reconocimiento de entidades nombradas y hashing:
+
+-   <https://mostly.ai/blog/data-anonymization-in-python>
+-   <https://fund.ar/publicacion/guia-practica-para-la-anonimizacion-de-datos/>
+
+### En hojas de cálculo
+
+-   <https://www.excel-exercise.com/anonymise-your-data/>
