@@ -110,11 +110,15 @@ totales_edad_agrupada_r <- pacientes_muestra %>%
   count(edad_agrupada, name = 'Pacientes')
 ```
 
-```{r comparo}
 
-totales_edad_agrupada_r
+Las edades quedan distribuidas de la siguiente manera:
 
-pacientes_muestra %>% filter(edad==122)
+```{r comparo, echo=FALSE}
+
+DT::datatable(totales_edad_agrupada_r,
+              rownames=FALSE,
+              options = list(dom = 't'))
+
 ```
 
 ## Supresión
@@ -123,21 +127,56 @@ La supresión consiste en remover los casos atípicos que por su baja frecuencia
 
 Para eso el primer paso es identificar los valores extremos, esto puede hacerse mediante cualquier estrategia conocida (por ej. rango intercuartílico). Por una cuestión de practicidad, vamos a reconocerlos con medidas resumen y box-plot, pero esto es muy dependiente del tipo de datos y el posterior uso que queramos hacer de ellos.
 
-```{r supresión en R}
+```{r valores_extremos}
 
+### Genero el Box-plot
 ggplot(pacientes_muestra, 
        aes(y=edad)) +
   geom_boxplot() +
   xlab("") +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
+```
+
+Suprimo los registros con edades mayores al rango intercuartílico (más de 110 años)
+
+```{r supresión en R}
 
 pacientes_muestra_sup <- pacientes_muestra %>% 
-  filter(edad <= 100)
+  filter(edad <= 110)
+```
 
+Comparo los principales estimadores de posición entre ambos conjuntos de datos (con y sin valores extremos)
+
+```{r comparo distribuciones, echo=FALSE}
+print('Conjunto de datos original:')
 print(summary(pacientes_muestra$edad))
+print('Conjunto de datos suprimidos:')
 print(summary(pacientes_muestra_sup$edad))
 ```
+
+```{r pacientes_out}
+
+pacientes_out <- pacientes_muestra %>% filter(edad>110)
+
+DT::datatable(pacientes_out %>% 
+                select(-nombre_completo_hash),
+              rownames=FALSE,
+              options = list(dom = 't'))
+```
+Revisamos cuántos casos quedan comprendidos con esa edad agrupada y esos departamentos:
+
+```{r comparacion supresión en R, echo=TRUE}
+# cuento el total de registros por categoría de edad y departamento
+totales_edad_depto_agrupada_r <- pacientes_muestra %>% 
+  count(edad_agrupada,departamento, name = 'Pacientes') %>% 
+  filter(departamento %in% pacientes_out$departamento)
+
+DT::datatable(totales_edad_depto_agrupada_r,
+              rownames=FALSE,
+              options = list(dom = 't'))
+```
+
 
 ## Perturbación
 
@@ -165,25 +204,15 @@ DT::datatable(head(pacientes_muestra) %>% select(num_historia,
               rownames=FALSE,
               options = list(dom = 't'))
 ```
+Comparo los principales estimadores de posición entre ambos conjuntos de datos (con la edad original y la perturbada), para evaluar el efecto de la perturbación sobre la distribución de las edades:
 
-```{r comparo dist}
+```{r comparo dist, echo=FALSE}
 
-ggplot(pacientes_muestra, 
-       aes(y=edad)) +
-  geom_boxplot() +
-  xlab("") +
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
-
-ggplot(pacientes_muestra, 
-       aes(y=edad_per_corr)) +
-  geom_boxplot() +
-  xlab("") +
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
-
+print('Edad original:')
+print(summary(pacientes_muestra$edad))
+print('Edad perturbada')
+print(summary(pacientes_muestra$edad_per_corr))
 ```
-
 ## Créditos
 
 Hashing:
