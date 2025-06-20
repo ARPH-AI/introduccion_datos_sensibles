@@ -12,4 +12,6 @@ Materiales desarrollados en español gracias al financiamiento de Invest in Open
 
 ## Capacitaciones brindadas
 
-[30-05-2025] Gerencia Operativa de Gestión de Información y Estadísticas de Salud (GOGIES). Ministerio de Salud del Gobierno de la Ciudad Autónoma de Buenos Aires, Argentina.
+| **Fecha**  | **Organización**                                                                                                                                                  | **Participantes** |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------|
+| 30/05/2025 | Gerencia Operativa de Gestión de Información y Estadísticas de Salud (GOGIES). Ministerio de Salud del Gobierno de la Ciudad Autónoma de Buenos Aires, Argentina. | 25                |
