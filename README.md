@@ -15,3 +15,4 @@ Materiales desarrollados en español gracias al financiamiento de Invest in Open
 | **Fecha**  | **Organización**                                                                                                                                                  | **Participantes** |
 |------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------|
 | 30/05/2025 | Gerencia Operativa de Gestión de Información y Estadísticas de Salud (GOGIES). Ministerio de Salud del Gobierno de la Ciudad Autónoma de Buenos Aires, Argentina. | 25                |
+| 22/07/2025 | Dirección General de Sistemas de Información Sanitaria (DGSISAN). Ministerio de Salud del Gobierno de la Ciudad Autónoma de Buenos Aires, Argentina. | 46                |
