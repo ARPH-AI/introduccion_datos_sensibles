@@ -15,7 +15,7 @@ Materiales desarrollados en español gracias al financiamiento de Invest in Open
 | **Fecha**  | **Organización**                                                                                                                                                  | **Participantes** | **Presentación** |
 |------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------|------------------|
 | 30/05/2025 | Gerencia Operativa de Gestión de Información y Estadísticas de Salud (GOGIES). Ministerio de Salud del Gobierno de la Ciudad Autónoma de Buenos Aires, Argentina. | 25                | [Link](https://zenodo.org/records/15783606) |
-| 22/07/2025 | Dirección General de Sistemas de Información Sanitaria (DGSISAN). Ministerio de Salud del Gobierno de la Ciudad Autónoma de Buenos Aires, Argentina. | 46                | [Link](https://zenodo.org/records/17143567) |
+| 22/07/2025 | Dirección General de Sistemas de Información Sanitaria (DGSISAN). Ministerio de Salud del Gobierno de la Ciudad Autónoma de Buenos Aires, Argentina. | 29                | [Link](https://zenodo.org/records/17143567) |
 
 ## Documentos disponibles
 - [Introducción al uso responsable de datos sensibles](https://zenodo.org/records/17143651): El propósito de este documento es brindar a la comunidad de investigación y gestión de datos sensibles una introducción al área del Uso Responsable de datos sensibles. Esto incluye no sólo definiciones conceptuales sino también los dilemas éticos que esto conlleva así como estrategias y herramientas para superar dificultades y mitigar riesgos en este tipo de trabajos. 
